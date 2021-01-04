@@ -1,0 +1,75 @@
+import React, { useState, useEffect } from 'react';
+import { Modal, Button } from 'components';
+import { country } from 'App';
+import { useMutation } from '@apollo/react-hooks';
+import { newClient } from 'helpers';
+import { MUTATE_USER_BY_TOKEN } from 'queries/profile';
+import { withRouter } from 'react-router-dom';
+import { isEmpty } from 'lodash';
+import { countryMap } from 'helpers/countryMapping';
+import { t } from '@lingui/macro';
+import { withI18n } from '@lingui/react';
+import { message } from 'antd';
+
+const TutorProfileLink = ({ item, history, i18n }) => {
+	const { avatar } = item;
+	const [modalVisibility, setModalVisibility] = useState();
+
+	const [fetchUserByToken, { data: dataByToken = {}, loading: loadingByToken }] = useMutation(MUTATE_USER_BY_TOKEN, {
+		client: newClient(),
+		onError: error => message.error(i18n._(t`${error}`) + countryMap[country].name, 3)
+	});
+
+	const handleClick = ( event, avatar ) => {
+		event.stopPropagation();
+		fetchUserByToken({
+			variables: {
+				keywords: "",
+				code: avatar?.token || 0,
+				subjects: [],
+				curriculums: []
+			}
+		});
+	};
+
+	const onConfirm = () => {
+    console.log(`/${tutorCountry}/${avatar?.token}--${item?.userPvid}--${avatar?.FirstName}--${avatar?.LastName}`);
+		history.push(`/${tutorCountry}/${avatar?.token}--${item?.userPvid}--${avatar?.FirstName}--${avatar?.LastName}`)
+		localStorage.setItem('country', tutorCountry);
+	};
+
+	const modalFooter = (
+		<>
+			<Button type="default" onClick={() => setModalVisibility(false)}>
+				{i18n._(t`Cancel`, 3)}
+			</Button>
+			<Button type="primary" onClick={onConfirm}>
+				{i18n._(t`Confirm`, 3)}
+			</Button>
+		</>
+	);
+
+	const tutorCountry = (dataByToken.getProfile || {}).country;
+
+	useEffect(() => {
+		!isEmpty(dataByToken) &&
+			(tutorCountry === country
+				? history.push(`/${tutorCountry}/${avatar?.token}--${item?.userPvid}--${avatar?.FirstName}--${avatar?.LastName}`)
+				: setModalVisibility(true));
+	}, [country, history, dataByToken, tutorCountry]);
+
+	return (
+		<>
+			<span
+				style={{ textDecoration: 'underline', cursor: 'pointer' }}
+				onClick={event => handleClick(event, item.avatar, item.userPvid)}>
+				{item.avatar.FirstName}
+			</span>
+			<Modal visible={modalVisibility} footer={modalFooter} closable={false}>
+				{i18n._(t`This user is not from{`, 3) + countryMap[country].name + i18n._(t`}. you will be redirected if you continue.`, 3)}
+			</Modal>
+		</>
+	);
+};
+
+export default withRouter(withI18n()(TutorProfileLink));

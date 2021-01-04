@@ -1,0 +1,23 @@
+		useEffect(() => {
+		resizeHandler()
+		return () => window.removeEventListener("resize", resizeHandler)
+	})
+  
+  
+  
+  
+  
+  
+  const resizeHandler = () => {
+		if (backToInbox && isEmpty(params) && window.innerWidth < 1024) {
+			setShowInbox(true)
+		}
+		if (window.innerWidth > 1024) {
+			setShowInbox(true)
+			setShowThreadData(true)
+		}
+		if (window.innerWidth < 1024 && !backToInbox && isEmpty(params)) {
+			setShowInbox(true)
+		}
+	}
+	window.addEventListener("resize", resizeHandler)
